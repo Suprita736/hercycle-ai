@@ -287,38 +287,22 @@ Phase 8  🔲  Community forum for anonymous peer support
 
 Thank you to all the amazing people who built HerCycle AI!
 
-### Team Members
+### Sole Builder & Project Lead
 
 | Avatar | Name | Role | GitHub | LinkedIn |
 |--------|------|------|--------|----------|
-| <img src="https://github.com/khushi897920-lang.png" width="60" style="border-radius:50%"> | **Khushi** | Full Stack Developer & AI Integration · Project Lead | [@khushi897920-lang](https://github.com/khushi897920-lang) | [LinkedIn](https://www.linkedin.com/in/khushii-singh01) |
-| <img src="https://github.com/TEAMMATE2_GITHUB.png" width="60" style="border-radius:50%"> | **Add Your Name* | ML + Database | [@TEAMMATE2_GITHUB](https://GitHub.com/zaaraf027-glitch) | [LinkedIn](https://linkedin.com/in/ADD_LINKEDIN) |
-| <img src="https://github.com/TEAMMATE3_GITHUB.png" width="60" style="border-radius:50%"> | **Add Your Name** | Backend + Presentation | [@TEAMMATE3_GITHUB](https://github.com/Samiksha48787) | [LinkedIn](https://www.linkedin.com/in/samiksha-mishra-25939b370) |
-| <img src="https://github.com/TEAMMATE4_GITHUB.png" width="60" style="border-radius:50%"> | **Add Your Name** | UI/UX Designer | [@TEAMMATE4_GITHUB](https://github.com/mehakdutta2005-lab) | [LinkedIn](https://linkedin.com/in/ADD_LINKEDIN) |
+| <img src="https://github.com/khushi897920-lang.png" width="60" style="border-radius:50%"> | **Khushi Singh** | Sole Builder / Project Lead<br/><sub>(Full Stack Developer, AI Integration, Database, UI/UX — everything)</sub> | [@khushi897920-lang](https://github.com/khushi897920-lang) | [LinkedIn](https://www.linkedin.com/in/khushii-singh01) |
 
-### How to Add Yourself
+### 💖 Acknowledgements / Special Thanks
 
-1. Fork this repository
-2. Edit this file: `README.md`
-3. Replace your row's placeholder with your real details:
-   - Replace `TEAMMATE_GITHUB` with your GitHub username
-   - Replace `Add Your Name` with your real name
-   - Replace `Add Your Role` with your role in the project
-   - Replace `ADD_LINKEDIN` with your LinkedIn profile URL
-4. Commit with message: `docs: add [YOUR NAME] to contributors`
-5. Push and open a Pull Request
+#### Early Contributors
+*Note: Contributed during initial prototype phase*
 
-### Roles Reference
+- **zaaraf027-glitch** — ML + Database ([@zaaraf027-glitch](https://github.com/zaaraf027-glitch))
+- **Samiksha48787** — Backend + Presentation ([@Samiksha48787](https://github.com/Samiksha48787) · [LinkedIn](https://www.linkedin.com/in/samiksha-mishra-25939b370))
+- **mehakdutta2005-lab** — UI/UX Designer ([@mehakdutta2005-lab](https://github.com/mehakdutta2005-lab))
 
-| Role | Description |
-|------|-------------|
-| Full Stack Developer | Built frontend + backend + API routes |
-| UI/UX Designer | Designed the glassmorphism interface |
-| AI Integration | Integrated Gemini + Groq chat system |
-| Database Architect | Designed Supabase schema + RLS policies |
-| Project Lead | Overall project direction and management |
-| Backend Developer | Built API routes and business logic |
-| Frontend Developer | Built React components and pages |
+---
 
 [![Contributors](https://contrib.rocks/image?repo=khushi897920-lang/hercycle-ai)](#-contributors)
 
