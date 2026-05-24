@@ -353,7 +353,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 ### 🌸 Thank you for visiting HerCycle AI
 
 *Every woman deserves to understand her own body.*
-*We built this so she can.*
+*I built this so she can.*
 
 [![Live Demo](https://img.shields.io/badge/🚀%20Try%20Live%20Demo-C2185B?style=for-the-badge&logoColor=white)](https://hercycle-ai.vercel.app)
 [![GitHub Stars](https://img.shields.io/github/stars/khushi897920-lang/hercycle-ai?style=for-the-badge&color=C2185B&logo=github)](https://github.com/khushi897920-lang/hercycle-ai)
@@ -363,6 +363,6 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 *Made with* 💕 *in India 🇮🇳*
 
-*© 2026 HerCycle AI Team · MIT License*
+*© 2026 Khushi Singh · MIT License*
 
 </div>
