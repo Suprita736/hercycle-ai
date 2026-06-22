@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { calculatePCODRisk } from '@/lib/api-helpers'
-import { getAuthUserId } from '@/lib/supabase-server'
+import { getAuthUserId } from '@/lib/clerk-server'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,

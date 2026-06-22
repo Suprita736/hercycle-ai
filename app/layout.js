@@ -1,4 +1,5 @@
 import { Playfair_Display, Inter } from 'next/font/google'
+import { ClerkProvider } from '@clerk/nextjs'
 import { LanguageProvider } from '@/lib/LanguageContext'
 import { Toaster } from 'react-hot-toast'
 import './globals.css'
@@ -47,6 +48,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
+    <ClerkProvider clockSkewInMs={30000}>
     <html lang="en">
       <head>
         <script dangerouslySetInnerHTML={{__html:'window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);'}} />
@@ -72,5 +74,6 @@ export default function RootLayout({ children }) {
         </LanguageProvider>
       </body>
     </html>
+    </ClerkProvider>
   )
 }

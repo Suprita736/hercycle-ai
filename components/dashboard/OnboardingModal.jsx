@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import { t } from '@/lib/i18n'
-import { createClient } from '@/lib/supabase-client'
+import { useAuth } from '@clerk/nextjs'
 import toast from 'react-hot-toast'
 
 export default function OnboardingModal({ activeLang, onComplete, onSkip }) {
-  const supabase = createClient()
+  const { userId } = useAuth()
   const [lastPeriodDate, setLastPeriodDate] = useState('')
   const [cycleLength, setCycleLength] = useState(28)
   const [periodLength, setPeriodLength] = useState(5)
@@ -20,9 +20,6 @@ export default function OnboardingModal({ activeLang, onComplete, onSkip }) {
     setSaveError(null)
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const userId = session?.user?.id
-      
       if (!userId) {
         setSaveError('No session found - user not logged in')
         setSaving(false)

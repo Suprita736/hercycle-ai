@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase-client'
+import { useAuth } from '@clerk/nextjs'
 import { RefreshCw, Calendar, TrendingUp, Activity, BarChart2 } from 'lucide-react'
 import {
   LineChart, Line, BarChart, Bar,
@@ -124,7 +124,7 @@ const gridProps = { strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.1)' }
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function InsightsPage() {
   const router   = useRouter()
-  const supabase = createClient()
+  const { isLoaded, isSignedIn } = useAuth()
 
   const [cycleData, setCycleData] = useState(null)
   const [pcodRisk,  setPcodRisk]  = useState(null)
@@ -132,27 +132,22 @@ export default function InsightsPage() {
   const [loading,   setLoading]   = useState(true)
 
   useEffect(() => {
-    const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/auth/login'); return }
+    if (!isLoaded) return
+    if (!isSignedIn) { router.push('/auth/login'); return }
 
-      const [cycleRes, pcodRes, { data: logs }] = await Promise.all([
+    const init = async () => {
+      const [cycleRes, pcodRes, logsRes] = await Promise.all([
         fetch('/api/cycles').then(r => r.json()),
         fetch('/api/pcod-risk').then(r => r.json()),
-        supabase
-          .from('daily_logs')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .order('date', { ascending: false }),
+        fetch('/api/log-day/all').then(r => r.json()),
       ])
-
       if (cycleRes.success) setCycleData(cycleRes.data)
       if (pcodRes.success)  setPcodRisk(pcodRes.data)
-      setDailyLogs(logs || [])
+      setDailyLogs(logsRes.success ? logsRes.data : [])
       setLoading(false)
     }
     init()
-  }, [router, supabase])
+  }, [isLoaded, isSignedIn, router])
 
   // ── Derived data ──────────────────────────────────────────────────────────
   const cycles      = cycleData?.cycles || []

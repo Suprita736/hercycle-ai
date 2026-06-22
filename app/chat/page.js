@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase-client'
+import { useAuth } from '@clerk/nextjs'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import ChatAssistant from '@/components/dashboard/ChatAssistant'
 
 export default function ChatPage() {
   const router   = useRouter()
-  const supabase = createClient()
+  const { isLoaded, isSignedIn } = useAuth()
 
   const [cycleData,     setCycleData]     = useState(null)
   const [chatMessages,  setChatMessages]  = useState([
@@ -19,16 +19,12 @@ export default function ChatPage() {
   const [isTyping,    setIsTyping]    = useState(false)
 
   useEffect(() => {
-    const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/auth/login'); return }
-
-      const res  = await fetch('/api/cycles')
-      const data = await res.json()
+    if (!isLoaded) return
+    if (!isSignedIn) { router.push('/auth/login'); return }
+    fetch('/api/cycles').then(r => r.json()).then(data => {
       if (data.success) setCycleData(data.data)
-    }
-    init()
-  }, [router, supabase.auth])
+    })
+  }, [isLoaded, isSignedIn, router])
 
   const handleSendMessage = async (directMessage) => {
     const userMessage = directMessage || chatInput

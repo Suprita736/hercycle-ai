@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase-client'
+import { useAuth } from '@clerk/nextjs'
 import toast from 'react-hot-toast'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
@@ -73,7 +73,7 @@ function buildCalendarDays(year, month, periodDays, ovulationDays, predictedDays
 
 export default function TrackPage() {
   const router   = useRouter()
-  const supabase = createClient()
+  const { isLoaded, isSignedIn } = useAuth()
   const now      = new Date()
 
   const [viewYear,  setViewYear]  = useState(now.getFullYear())
@@ -95,32 +95,23 @@ export default function TrackPage() {
 
   const fetchTodayLog = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
       const today = new Date().toISOString().split('T')[0]
-      const { data } = await supabase
-        .from('daily_logs')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .eq('date', today)
-        .single()
-      
-      if (data) {
-        if (data.symptoms) setSelectedSymptoms(data.symptoms)
-        if (data.mood) setSelectedMood(data.mood)
-        if (data.flow) setSelectedFlow(data.flow)
+      const res = await fetch(`/api/log-day?date=${today}`)
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.success && data.data) {
+        if (data.data.symptoms) setSelectedSymptoms(data.data.symptoms)
+        if (data.data.mood)     setSelectedMood(data.data.mood)
+        if (data.data.flow)     setSelectedFlow(data.data.flow)
       }
     } catch (e) { console.error(e) }
   }
 
   useEffect(() => {
-    const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/auth/login'); return }
-      await Promise.all([fetchCycleData(), fetchTodayLog()])
-    }
-    init()
-  }, [router, supabase])
+    if (!isLoaded) return
+    if (!isSignedIn) { router.push('/auth/login'); return }
+    Promise.all([fetchCycleData(), fetchTodayLog()])
+  }, [isLoaded, isSignedIn, router])
 
   const handleSaveLog = async () => {
     try {
@@ -150,25 +141,21 @@ export default function TrackPage() {
   }
 
   const handleStartPeriod = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return
-
     const today   = new Date()
     const endDate = new Date(today)
     endDate.setDate(endDate.getDate() + 5)
 
-    const { error } = await supabase.from('cycles').insert([{
-      user_id:      session.user.id,
-      start_date:   today.toISOString().split('T')[0],
-      end_date:     endDate.toISOString().split('T')[0],
-      cycle_length: cycleData?.averageCycleLength || 28,
-      created_at:   new Date().toISOString(),
-    }])
-
-    if (error) {
-      toast.error('❌ Could not start period')
-      return
-    }
+    const res = await fetch('/api/cycles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        start_date:   today.toISOString().split('T')[0],
+        end_date:     endDate.toISOString().split('T')[0],
+        cycle_length: cycleData?.averageCycleLength || 28,
+      }),
+    })
+    const data = await res.json()
+    if (!data.success) { toast.error('❌ Could not start period'); return }
     toast.success('🌸 Period started! Your cycle is now being tracked.')
     fetchCycleData()
   }
@@ -176,16 +163,16 @@ export default function TrackPage() {
   const handleEndPeriod = async () => {
     const today  = new Date().toISOString().split('T')[0]
     const cycles = cycleData?.cycles || []
-
-    // Find most recent open cycle (no end_date, or end_date in future)
-    const open = cycles.find(c => {
-      if (!c.end_date) return true
-      return new Date(c.end_date) > new Date()
-    })
+    const open   = cycles.find(c => !c.end_date || new Date(c.end_date) > new Date())
     if (!open) { toast.error('No open period found to end'); return }
 
-    const { error } = await supabase.from('cycles').update({ end_date: today }).eq('id', open.id)
-    if (error) { toast.error('❌ Could not end period'); return }
+    const res = await fetch('/api/cycles', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: open.id, end_date: today }),
+    })
+    const data = await res.json()
+    if (!data.success) { toast.error('❌ Could not end period'); return }
     toast.success('✅ Period ended!')
     fetchCycleData()
   }

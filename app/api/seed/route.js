@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+// 🔒 SAFETY GUARD — seed route disabled in production
+if (process.env.NODE_ENV === 'production') {
+  module.exports = {
+    GET: () => NextResponse.json({ error: 'Not available in production' }, { status: 403 }),
+    POST: () => NextResponse.json({ error: 'Not available in production' }, { status: 403 }),
+  }
+}
+
+
 // Use service role key if available (bypasses RLS), fall back to anon
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,

@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useLanguage } from '@/lib/LanguageContext'
-import { createClient } from '@/lib/supabase-client'
+import { useClerk } from '@clerk/nextjs'
 
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Dashboard', href: '/' },
@@ -15,7 +15,7 @@ export default function Navbar() {
   const { language, setLanguage } = useLanguage()
   const router   = useRouter()
   const pathname = usePathname()
-  const supabase = createClient()
+  const { signOut } = useClerk()
 
   const handleLogToday = () => {
     if (pathname === '/') {
@@ -27,9 +27,8 @@ export default function Navbar() {
   }
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    await signOut()
     router.push('/auth/login')
-    router.refresh()
   }
 
   const isActive = (href) => {

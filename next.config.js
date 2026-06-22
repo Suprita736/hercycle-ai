@@ -1,24 +1,61 @@
 const nextConfig = {
-  // ⚠️ Do NOT use output: 'standalone' on Vercel — it breaks serverless routing
+  // Performance
+  compress: true,
+  poweredByHeader: false,
+  reactStrictMode: true,
+
+  // Image optimization (enable Next.js built-in optimizer)
   images: {
-    unoptimized: true,
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
   },
-  // Silence the Turbopack/webpack conflict warning
+
+  // Turbopack (already default in dev, speeds up HMR)
   turbopack: {},
+
+  // Optimize heavy packages — tree-shake on import
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      'recharts',
+      '@radix-ui/react-accordion',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-tooltip',
+    ],
+  },
+
+  // Security & CORS headers
   async headers() {
     return [
       {
-        source: "/(.*)",
+        source: '/(.*)',
         headers: [
-          { key: "X-Frame-Options", value: "ALLOWALL" },
-          { key: "Content-Security-Policy", value: "frame-ancestors *;" },
-          { key: "Access-Control-Allow-Origin", value: process.env.CORS_ORIGINS || "*" },
-          { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, DELETE, OPTIONS" },
-          { key: "Access-Control-Allow-Headers", value: "*" },
+          { key: 'X-Frame-Options',                value: 'ALLOWALL' },
+          { key: 'Content-Security-Policy',         value: 'frame-ancestors *;' },
+          { key: 'Access-Control-Allow-Origin',     value: process.env.CORS_ORIGINS || '*' },
+          { key: 'Access-Control-Allow-Methods',    value: 'GET, POST, PUT, PATCH, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers',    value: '*' },
+          { key: 'X-Content-Type-Options',          value: 'nosniff' },
+          { key: 'Referrer-Policy',                 value: 'strict-origin-when-cross-origin' },
         ],
       },
-    ];
+      // Cache static API responses (cycle data, PCOD risk) for 60s
+      {
+        source: '/api/cycles',
+        headers: [
+          { key: 'Cache-Control', value: 'private, max-age=60, stale-while-revalidate=30' },
+        ],
+      },
+      {
+        source: '/api/pcod-risk',
+        headers: [
+          { key: 'Cache-Control', value: 'private, max-age=300, stale-while-revalidate=60' },
+        ],
+      },
+    ]
   },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

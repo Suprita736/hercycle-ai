@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase-client'
+import { useAuth } from '@clerk/nextjs'
 import toast from 'react-hot-toast'
 
 import Navbar from '@/components/layout/Navbar'
@@ -104,7 +104,7 @@ function buildCalendarDays(year, month, periodDays, ovulationDays, predictedDays
 
 const HerCycleApp = () => {
   const router = useRouter()
-  const supabase = createClient()
+  const { isLoaded, isSignedIn } = useAuth()
   const now = new Date()
   const [activeNav, setActiveNav] = useState('Dashboard')
   const [activeLang, setActiveLang] = useState('EN')
@@ -146,20 +146,13 @@ const HerCycleApp = () => {
 
   // Check session on mount and load data
   useEffect(() => {
-    const initData = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        router.push('/auth/login')
-        return
-      }
-
-      await Promise.all([
-        fetchCycleData(),
-        fetchPCODRisk()
-      ])
+    if (!isLoaded) return
+    if (!isSignedIn) {
+      router.push('/auth/login')
+      return
     }
-    initData()
-  }, [router, supabase.auth])
+    Promise.all([fetchCycleData(), fetchPCODRisk()])
+  }, [isLoaded, isSignedIn, router])
 
   const fetchCycleData = async () => {
     try {
