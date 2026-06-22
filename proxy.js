@@ -4,6 +4,7 @@ const isPublicRoute = createRouteMatcher([
   '/auth/login(.*)',
   '/auth/signup(.*)',
   '/auth/callback(.*)',
+  '/api/(.*)', // Allow API routes to handle their own auth checks and return clean JSON responses
 ])
 
 export default clerkMiddleware(
