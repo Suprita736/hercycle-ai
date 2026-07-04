@@ -99,6 +99,14 @@ body {
 }
 
 /* Ambient blobs */
+.app-decor {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
 .blob {
   position: fixed;
   border-radius: 50%;
@@ -203,7 +211,17 @@ nav {
   font-weight: 600;
   text-shadow: 2px 2px 8px rgba(157, 63, 122, 0.5);
 }
-.logo-dot { color: var(--rose-bright); }
+.logo-dot { color: var(--rose-bright) !important; }
+.logo-her {
+  color: var(--rose-bright) !important;
+}
+.logo-cycle {
+  color: #fef08a !important;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 600;
+  text-shadow: 2px 2px 8px rgba(157, 63, 122, 0.5);
+}
 
 nav ul {
   display: flex;
@@ -2321,7 +2339,7 @@ nav ul li a.active {
   background: rgba(255,255,255,0.20) !important;
   border-color: rgba(255,255,255,0.52) !important;
   color: white !important;
-  transform: translateY(-3px) scale(1.015) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
 }
 
 .nav-log-btn:active,
