@@ -2,42 +2,48 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useLanguage } from '@/lib/LanguageContext'
+import { useTranslations, useLocale } from 'next-intl'
 import { useClerk } from '@clerk/nextjs'
 import { useOffline } from '@/lib/OfflineContext'
 
-const NAV_ITEMS = [
-  { key: 'dashboard', label: 'Dashboard', href: '/' },
-  { key: 'track',     label: 'Track',     href: '/track' },
-  { key: 'insights',  label: 'Insights',  href: '/insights' },
-  { key: 'chat',      label: 'Chat',      href: '/chat' },
-]
-
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { language, setLanguage } = useLanguage()
-  const router   = useRouter()
+  const t = useTranslations('Navbar')
+  const locale = useLocale()
+  const router = useRouter()
   const pathname = usePathname()
   const { signOut } = useClerk()
   const { isOffline, pendingSyncCount, isSyncing } = useOffline()
 
+  const NAV_ITEMS = [
+    { key: 'dashboard', label: t('dashboard'), href: `/${locale}` },
+    { key: 'track',     label: t('track'),     href: `/${locale}/track` },
+    { key: 'insights',  label: t('insights'),  href: `/${locale}/insights` },
+    { key: 'chat',      label: t('chat'),      href: `/${locale}/chat` },
+  ]
+
   const handleLogToday = () => {
-    if (pathname === '/') {
+    if (pathname === `/${locale}` || pathname === '/') {
       const el = document.getElementById('daily-log-section')
       if (el) el.scrollIntoView({ behavior: 'smooth' })
     } else {
-      router.push('/track')
+      router.push(`/${locale}/track`)
     }
   }
 
   const handleLogout = async () => {
     await signOut()
-    router.push('/auth/login')
+    router.push(`/${locale}/auth/login`)
   }
 
   const isActive = (href) => {
-    if (href === '/') return pathname === '/'
+    if (href === `/${locale}`) return pathname === `/${locale}` || pathname === '/'
     return pathname.startsWith(href)
+  }
+
+  const switchLanguage = (newLocale) => {
+    const currentPathWithoutLocale = pathname.replace(`/${locale}`, '') || '/'
+    router.push(`/${newLocale}${currentPathWithoutLocale === '/' ? '' : currentPathWithoutLocale}`)
   }
 
   return (
@@ -49,13 +55,13 @@ export default function Navbar() {
           {isOffline && (
             <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/30 whitespace-nowrap animate-pulse">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-              Offline
+              {t('offline')}
             </span>
           )}
           {!isOffline && pendingSyncCount > 0 && (
             <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 whitespace-nowrap">
               <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-ping"></span>
-              Sync Pending ({pendingSyncCount})
+              {t('syncPending')} ({pendingSyncCount})
             </span>
           )}
           {!isOffline && isSyncing && (
@@ -64,7 +70,7 @@ export default function Navbar() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
-              Syncing
+              {t('syncing')}
             </span>
           )}
         </div>
@@ -118,16 +124,16 @@ export default function Navbar() {
       <div className="nav-right flex flex-nowrap items-center justify-center md:justify-end gap-2 sm:gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
         <div className="lang-toggle shrink-0">
           <button
-            className={`lang-btn ${language === 'EN' ? 'active' : ''}`}
-            onClick={() => setLanguage('EN')}
+            className={`lang-btn ${locale === 'en' ? 'active' : ''}`}
+            onClick={() => switchLanguage('en')}
           >EN</button>
           <button
-            className={`lang-btn ${language === 'हि' ? 'active' : ''}`}
-            onClick={() => setLanguage('हि')}
+            className={`lang-btn ${locale === 'hi' ? 'active' : ''}`}
+            onClick={() => switchLanguage('hi')}
           >हि</button>
         </div>
         <button className="btn-pill nav-action nav-log-btn shrink-0 px-3 py-1.5 sm:px-5 text-[12px] sm:text-sm whitespace-nowrap" onClick={handleLogToday}>
-          Log Today
+          {t('logToday')}
         </button>
         <button
           className="btn-pill nav-action nav-signout-btn shrink-0 px-3 py-1.5 sm:px-5 text-[12px] sm:text-sm whitespace-nowrap"
@@ -136,9 +142,9 @@ export default function Navbar() {
             background: 'rgba(255,255,255,0.12)',
             border: '1px solid rgba(255,255,255,0.3)',
           }}
-          title="Log out"
+          title={t('signOut')}
         >
-          Sign Out
+          {t('signOut')}
         </button>
       </div>
     </nav>

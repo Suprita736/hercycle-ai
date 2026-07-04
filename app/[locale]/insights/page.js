@@ -12,6 +12,7 @@ import {
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { useOffline } from '@/lib/OfflineContext'
+import { useTranslations } from 'next-intl'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const PINK         = '#e8527e'
@@ -124,6 +125,10 @@ const gridProps = { strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.1)' }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function InsightsPage() {
+  const t = useTranslations('pages.insights')
+  const tSymp = useTranslations('symptoms')
+  const tMood = useTranslations('moods')
+  const tRisk = useTranslations('Risk')
   const router   = useRouter()
   const { isLoaded, isSignedIn } = useAuth()
   const { offlineClient } = useOffline()
@@ -175,19 +180,19 @@ export default function InsightsPage() {
       if (key) symptomCounts[key] = (symptomCounts[key] || 0) + 1
     })
   })
-  const symptomFreq = SYMPTOM_LIST.map(s => ({ name: s, count: symptomCounts[s] }))
+  const symptomFreq = SYMPTOM_LIST.map(s => ({ name: tSymp(s), count: symptomCounts[s] }))
 
   const moodCounts = { '😊': 0, '😐': 0, '😢': 0, '😡': 0 }
   dailyLogs.forEach(log => { if (log.mood && moodCounts[log.mood] !== undefined) moodCounts[log.mood]++ })
   const moodData = MOOD_EMOJIS.map(emoji => ({
     emoji,
-    label: MOOD_LABELS[emoji],
+    label: tMood(MOOD_LABELS[emoji]),
     pct: totalLogs > 0 ? Math.round((moodCounts[emoji] / totalLogs) * 100) : 0,
   }))
 
   const recordedValue = totalCycles > 0 ? totalCycles : totalLogs
-  const recordedLabel = totalCycles > 0 ? 'Cycles Recorded' : 'Days Logged'
-  const recordedSub   = totalCycles > 0 ? 'cycles' : 'log entries'
+  const recordedLabel = totalCycles > 0 ? t('cyclesRecorded') : t('daysLogged')
+  const recordedSub   = totalCycles > 0 ? t('cycles') : t('entries')
 
   return (
     <>
@@ -211,10 +216,10 @@ export default function InsightsPage() {
             }}>
               <BarChart2 size={28} color="white" strokeWidth={1.5} />
             </div>
-            <h1 style={{ margin: 0, fontSize: '2rem' }}>Insights</h1>
+            <h1 style={{ margin: 0, fontSize: '2rem' }}>{t('title')}</h1>
           </div>
           <p style={{ color: TEXT_FAINT, marginBottom: '2rem' }}>
-            Your personalised health analytics at a glance.
+            {t('subtitle')}
           </p>
 
           {/* ── Stat Cards ── */}
@@ -226,7 +231,7 @@ export default function InsightsPage() {
           }}>
             <StatCard
               icon={<RefreshCw size={28} color={ACCENT} strokeWidth={1.5} />}
-              label="Avg Cycle Length"
+              label={t('avgCycle')}
               value={`${avgCycle}d`}
               sub="days"
             />
@@ -238,26 +243,30 @@ export default function InsightsPage() {
             />
             <StatCard
               icon={<span style={{ fontSize: '1.75rem', lineHeight: 1 }}>🌸</span>}
-              label="Next Period"
+              label={t('nextPeriod')}
               value={loading ? '…' : nextDate}
-              sub="predicted"
+              sub={t('predicted')}
             />
             <StatCard
               icon={<span style={{ fontSize: '1.75rem', lineHeight: 1 }}>🩺</span>}
-              label="PCOD Risk Score"
+              label={t('pcodRisk')}
               value={loading ? '…' : `${pcodRisk?.score ?? 0}/100`}
-              sub={pcodRisk?.label || pcodRisk?.tier || 'LOW RISK'}
+              sub={
+                pcodRisk?.tier === 'HIGH RISK' ? tRisk('high')
+                : pcodRisk?.tier === 'MEDIUM RISK' ? tRisk('med')
+                : tRisk('low')
+              }
             />
           </div>
 
           {/* ── Cycle Length Trend ── */}
           <SectionCard
             icon={<TrendingUp size={18} color={ACCENT} strokeWidth={1.5} />}
-            title="Cycle Length Trend"
+            title={t('trendTitle')}
           >
             {cycleLengthData.length < 1 ? (
               <p style={{ color: TEXT_FAINT, textAlign: 'center', padding: '2rem 0' }}>
-                No cycles recorded yet. Use the Track page to start your first period.
+                {t('trendEmpty')}
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={220}>
@@ -280,11 +289,11 @@ export default function InsightsPage() {
           {/* ── Symptom Frequency ── */}
           <SectionCard
             icon={<Activity size={18} color={ACCENT} strokeWidth={1.5} />}
-            title="Symptom Frequency"
+            title={t('symptomTitle')}
           >
             {totalLogs === 0 ? (
               <p style={{ color: TEXT_FAINT, textAlign: 'center', padding: '2rem 0' }}>
-                No daily logs yet. Log your symptoms on the Track page or dashboard.
+                {t('symptomEmpty')}
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
@@ -306,11 +315,11 @@ export default function InsightsPage() {
           {/* ── Mood Distribution ── */}
           <SectionCard
             icon={null}
-            title="😊 Mood Distribution"
+            title={t('moodTitle')}
           >
             {totalLogs === 0 ? (
               <p style={{ color: TEXT_FAINT, textAlign: 'center', padding: '1rem 0' }}>
-                Log your mood daily to see your mood distribution here.
+                {t('moodEmpty')}
               </p>
             ) : (
               <>
@@ -338,7 +347,7 @@ export default function InsightsPage() {
                   ))}
                 </div>
                 <p style={{ fontSize: '0.72rem', color: TEXT_FAINT, marginTop: '0.75rem' }}>
-                  Based on {totalLogs} log {totalLogs === 1 ? 'entry' : 'entries'}.
+                  {t('moodBasedOn', { count: totalLogs, entryLabel: totalLogs === 1 ? t('entry') : t('entries') })}
                 </p>
               </>
             )}

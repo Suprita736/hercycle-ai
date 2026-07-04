@@ -15,8 +15,8 @@ import ChatAssistant from '@/components/dashboard/ChatAssistant'
 import DailyLogPanel from '@/components/dashboard/DailyLogPanel'
 import OnboardingModal from '@/components/dashboard/OnboardingModal'
 import PredictionCard from '@/components/dashboard/PredictionCard'
-import { t } from '@/lib/i18n'
 import { useOffline } from '@/lib/OfflineContext'
+import { useLocale, useTranslations } from 'next-intl'
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
@@ -109,12 +109,18 @@ const HerCycleApp = () => {
   const { offlineClient } = useOffline()
   const now = new Date()
   const [activeNav, setActiveNav] = useState('Dashboard')
-  const [activeLang, setActiveLang] = useState('EN')
+  const locale = useLocale()
+  const tHeadings = useTranslations('headings')
+  const tChat = useTranslations('Chat')
+  
+  // We keep activeLang to pass to legacy components temporarily. 
+  // Map 'en' -> 'EN' and 'hi' -> 'हि'
+  const activeLang = locale === 'hi' ? 'हि' : 'EN'
+  const tCycle = useTranslations('cycle')
+  
   const [viewYear, setViewYear] = useState(now.getFullYear())
   const [viewMonth, setViewMonth] = useState(now.getMonth()) // 0-indexed
-  const [chatMessages, setChatMessages] = useState([
-    { role: 'ai', text: 'Hello! I\'m your health assistant. Ask me anything about your cycle or health. 💕' }
-  ])
+  const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [selectedSymptoms, setSelectedSymptoms] = useState([])
@@ -154,7 +160,12 @@ const HerCycleApp = () => {
       return
     }
     Promise.all([fetchCycleData(), fetchPCODRisk()])
-  }, [isLoaded, isSignedIn, router])
+    
+    // Set initial greeting after mount to avoid hydration mismatch
+    if (chatMessages.length === 0) {
+      setChatMessages([{ role: 'ai', text: tChat('greeting') }])
+    }
+  }, [isLoaded, isSignedIn, router, tChat])
 
   const fetchCycleData = async () => {
     try {
@@ -228,7 +239,7 @@ const HerCycleApp = () => {
       setIsTyping(false)
       setChatMessages(prev => [...prev, { 
         role: 'ai', 
-        text: 'Sorry, I encountered an error. Please try again.' 
+        text: tChat('error')
       }])
     }
   }
@@ -286,7 +297,7 @@ const HerCycleApp = () => {
 
   // Calculate current cycle day and phase
   let cycleDayInfo = {
-    text: 'Start tracking to see your cycle phase',
+    text: tCycle('startTracking'),
     color: '#a0aec0',
     dot: '#a0aec0',
     phase: null,
@@ -312,29 +323,29 @@ const HerCycleApp = () => {
     cycleDayInfo.day = cycleDay
 
     if (cycleDay >= 1 && cycleDay <= 5) {
-      cycleDayInfo.phase = 'Menstrual Phase'
+      cycleDayInfo.phase = tCycle('menstrualPhase')
       cycleDayInfo.color = '#ff4757'
       cycleDayInfo.dot = '#ff4757'
     } else if (cycleDay >= 6 && cycleDay <= 11) {
-      cycleDayInfo.phase = 'Follicular Phase'
+      cycleDayInfo.phase = tCycle('follicularPhase')
       cycleDayInfo.color = '#a29bfe'
       cycleDayInfo.dot = '#a29bfe'
     } else if (cycleDay >= 12 && cycleDay <= 16) {
-      cycleDayInfo.phase = 'Ovulation Window'
+      cycleDayInfo.phase = tCycle('ovulationWindow')
       cycleDayInfo.color = '#00b894'
       cycleDayInfo.dot = '#00b894'
     } else if (cycleDay >= 17 && cycleDay <= 28) {
-      cycleDayInfo.phase = 'Luteal Phase'
+      cycleDayInfo.phase = tCycle('lutealPhase')
       cycleDayInfo.color = '#fdcb6e'
       cycleDayInfo.dot = '#fdcb6e'
     } else {
-      cycleDayInfo.phase = 'Late / Irregular'
+      cycleDayInfo.phase = tCycle('lateIrregular')
       cycleDayInfo.color = '#636e72'
       cycleDayInfo.dot = '#636e72'
     }
     
     if (cycleDay >= 1) {
-      cycleDayInfo.text = `Cycle Day ${cycleDay} · ${cycleDayInfo.phase}`
+      cycleDayInfo.text = tCycle('cycleDay', { day: cycleDay, phase: cycleDayInfo.phase })
     }
   }
 
@@ -366,8 +377,8 @@ const HerCycleApp = () => {
         <div className="drawer-overlay" onClick={closeLogDrawer} role="dialog" aria-modal="true" aria-label="Log Your Day">
           <div className="drawer-panel" onClick={(e) => e.stopPropagation()}>
             <div className="drawer-header">
-              <h2>{t(activeLang, 'log', 'title')}</h2>
-              <button className="drawer-close" onClick={closeLogDrawer} aria-label={t(activeLang, 'btn', 'close')}>✕</button>
+              <h2>{tHeadings('log')} 💕</h2>
+              <button className="drawer-close" onClick={closeLogDrawer} aria-label="Close">✕</button>
             </div>
             <div className="drawer-grid">
               <DailyLogPanel
@@ -393,7 +404,7 @@ const HerCycleApp = () => {
           <HeroSection activeLang={activeLang} cycleDayInfo={cycleDayInfo} />
           <CycleCalendar 
             calendarDays={calendarDays}
-            currentMonth={`${MONTH_NAMES[viewMonth]} ${viewYear}`}
+            currentMonth={`${new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-US', { month: 'long' }).format(new Date(viewYear, viewMonth))} ${viewYear}`}
             onPrevMonth={goToPrevMonth}
             onNextMonth={goToNextMonth}
             averageCycleLength={cycleData?.averageCycleLength || 28}
@@ -404,7 +415,7 @@ const HerCycleApp = () => {
 
         <FeaturesSection activeLang={activeLang} />
 
-        <h2 className="sec-head" id="pcod-risk-section">{t(activeLang, 'headings', 'insights')}</h2>
+        <h2 className="sec-head" id="pcod-risk-section">{tHeadings('insights')}</h2>
         <div className="dual-row">
           <PCODRiskCard
             pcodRisk={pcodRisk}
@@ -426,7 +437,7 @@ const HerCycleApp = () => {
           />
         </div>
 
-        <h2 className="sec-head">{t(activeLang, 'headings', 'log')}</h2>
+        <h2 className="sec-head">{tHeadings('log')}</h2>
         <div className="bottom-grid" id="daily-log-section">
           <DailyLogPanel 
             selectedSymptoms={selectedSymptoms} 
