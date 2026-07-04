@@ -340,18 +340,6 @@ const HerCycleApp = () => {
 
   return (
     <>
-      <div className="blob"></div>
-      <div className="blob"></div>
-      <div className="blob"></div>
-
-      <div className="particle" style={{left:'8%', animationDuration:'13s', animationDelay:'0s'}}>✨</div>
-      <div className="particle" style={{left:'22%', animationDuration:'17s', animationDelay:'3.5s'}}>🌸</div>
-      <div className="particle" style={{left:'38%', animationDuration:'14s', animationDelay:'7s'}}>💫</div>
-      <div className="particle" style={{left:'52%', animationDuration:'19s', animationDelay:'1s'}}>🌷</div>
-      <div className="particle" style={{left:'67%', animationDuration:'11s', animationDelay:'5s'}}>✨</div>
-      <div className="particle" style={{left:'80%', animationDuration:'16s', animationDelay:'2s'}}>💕</div>
-      <div className="particle" style={{left:'91%', animationDuration:'12s', animationDelay:'8s'}}>🌸</div>
-
       {/* ── Onboarding Modal ── */}
       {showOnboarding && (
         <OnboardingModal

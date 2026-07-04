@@ -6,7 +6,7 @@ export default function HeroSection({ activeLang, cycleDayInfo }) {
   const { useTranslation } = useLanguage()
   const router = useRouter()
 
-  const title1   = useTranslation('hero', 'heroTitle')  || useTranslation('hero', 'title1')
+  const title1   = useTranslation('hero', 'title1')
   const title2   = useTranslation('hero', 'title2')
   const subtitle = useTranslation('hero', 'heroSubtitle') || useTranslation('hero', 'subtitle')
 
