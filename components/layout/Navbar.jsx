@@ -51,7 +51,12 @@ export default function Navbar() {
       {/* Top Row (Mobile) / Left Side (Desktop) */}
       <div className="flex justify-between items-center w-full md:w-auto">
         <div className="logo text-lg sm:text-2xl flex items-center gap-2">
-          <span>Her<em>Cycle</em><span className="logo-dot"> AI</span> 🌸</span>
+          <span>
+            <span className="logo-her">Her</span>
+            <span className="logo-cycle">Cycle</span>
+            <span className="logo-dot"> AI</span>
+            🌸
+          </span>
           {isOffline && (
             <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/30 whitespace-nowrap animate-pulse">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
@@ -121,7 +126,7 @@ export default function Navbar() {
       )}
 
       {/* Action Buttons Row */}
-      <div className="nav-right flex flex-nowrap items-center justify-center md:justify-end gap-2 sm:gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+      <div className="nav-right flex flex-wrap items-center justify-center md:justify-end gap-2 sm:gap-3 w-full md:w-auto overflow-visible pb-0">
         <div className="lang-toggle shrink-0">
           <button
             className={`lang-btn ${locale === 'en' ? 'active' : ''}`}
