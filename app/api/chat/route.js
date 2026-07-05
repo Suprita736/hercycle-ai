@@ -2,7 +2,7 @@ import { validateEnv } from "@/lib/env";
 import { NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { getAuthUserId } from '@/lib/clerk-server'
-import { isAllowed } from '@/lib/rate-limiter'
+import { aiLimiter, getRateLimitIdentifier } from '@/lib/rateLimiter'
 import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
@@ -126,6 +126,19 @@ export async function POST(request) {
   validateEnv();
   let language = 'en'; // default
 
+  // ============ RATE LIMITING ============
+  try {
+    const identifier = await getRateLimitIdentifier(request);
+    await aiLimiter.check(10, identifier); // 10 requests per minute
+  } catch (rateLimitError) {
+    console.warn(`[Rate Limit] Chat endpoint: ${rateLimitError.message}`);
+    return NextResponse.json(
+      { success: false, error: 'Too many requests, please slow down. AI chat is rate limited.' },
+      { status: 429 }
+    );
+  }
+  // =======================================
+
   try {
     // 1. Clerk Authentication
     const userId = await getAuthUserId()
@@ -134,13 +147,7 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
 
-    // 2. Rate Limiting (10 requests/minute)
-    if (!isAllowed(userId, 'chat', 10)) {
-      logger.warn(`Rate limit exceeded for user ${userId} on AI Chat API`);
-      return NextResponse.json({ success: false, error: 'Too Many Requests' }, { status: 429 })
-    }
-
-    // 3. Input Validation (Zod)
+    // 2. Input Validation (Zod)
     const json = await request.json()
     const result = chatPayloadSchema.safeParse(json)
     if (!result.success) {

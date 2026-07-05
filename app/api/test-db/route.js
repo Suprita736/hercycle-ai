@@ -1,16 +1,30 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { getAuthUserId } from '@/lib/clerk-server'
+import { devLimiter, getRateLimitIdentifier } from '@/lib/rateLimiter'
 import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request) {
   // 1. Restrict to development only
   if (process.env.NODE_ENV === 'production') {
     logger.warn('Unauthorized production database test request blocked');
     return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
   }
+
+  // ============ RATE LIMITING ============
+  try {
+    const identifier = await getRateLimitIdentifier(request);
+    await devLimiter.check(2, identifier); // 2 requests per minute
+  } catch (rateLimitError) {
+    console.warn(`[Rate Limit] Test-DB endpoint: ${rateLimitError.message}`);
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Test route is heavily rate limited.' },
+      { status: 429 }
+    );
+  }
+  // =======================================
 
   // 2. Require Clerk authentication
   try {
