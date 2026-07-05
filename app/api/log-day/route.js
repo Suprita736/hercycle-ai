@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getAuthUserId } from '@/lib/clerk-server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { isAllowed } from '@/lib/rate-limiter'
+import { crudLimiter, getRateLimitIdentifier } from '@/lib/rateLimiter'
 import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
@@ -14,6 +14,19 @@ const logPostSchema = z.object({
 
 // GET /api/log-day?date=YYYY-MM-DD — fetch a single day's log
 export async function GET(request) {
+  // ============ RATE LIMITING ============
+  try {
+    const identifier = await getRateLimitIdentifier(request);
+    await crudLimiter.check(20, identifier); // 20 requests per minute
+  } catch (rateLimitError) {
+    console.warn(`[Rate Limit] Log-day GET endpoint: ${rateLimitError.message}`);
+    return NextResponse.json(
+      { success: false, message: 'Too many requests, please slow down.' },
+      { status: 429 }
+    );
+  }
+  // =======================================
+
   try {
     const userId = await getAuthUserId()
     if (!userId) {
@@ -53,17 +66,24 @@ export async function GET(request) {
 
 // POST /api/log-day — upsert a day's log
 export async function POST(request) {
+  // ============ RATE LIMITING ============
+  try {
+    const identifier = await getRateLimitIdentifier(request);
+    await crudLimiter.check(20, identifier); // 20 requests per minute
+  } catch (rateLimitError) {
+    console.warn(`[Rate Limit] Log-day POST endpoint: ${rateLimitError.message}`);
+    return NextResponse.json(
+      { success: false, message: 'Too many requests, please slow down.' },
+      { status: 429 }
+    );
+  }
+  // =======================================
+
   try {
     const userId = await getAuthUserId()
     if (!userId) {
       logger.warn('Unauthenticated access attempt to POST /api/log-day');
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Rate Limiting (30 requests/minute)
-    if (!isAllowed(userId, 'log_day_write', 30)) {
-      logger.warn(`Rate limit exceeded for user ${userId} on POST /api/log-day`);
-      return NextResponse.json({ success: false, message: 'Too Many Requests' }, { status: 429 })
     }
 
     // Payload Validation
