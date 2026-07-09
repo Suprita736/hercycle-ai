@@ -2,21 +2,31 @@ import { NextResponse } from 'next/server'
 import { predictNextPeriod } from '@/lib/api-helpers'
 import { getAuthUserId } from '@/lib/clerk-server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { isAllowed } from '@/lib/rate-limiter'
+import { aiLimiter, getRateLimitIdentifier } from '@/lib/rateLimiter'
 import { logger } from '@/lib/logger'
 
-export async function POST() {
+export async function POST(request) {
+  // ============ RATE LIMITING ============
+  try {
+    const identifier = await getRateLimitIdentifier(request);
+    await aiLimiter.check(5, identifier); // 5 requests per minute
+  } catch (rateLimitError) {
+    console.warn(`[Rate Limit] Predict cycle endpoint: ${rateLimitError.message}`);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Too many requests, please slow down. Cycle prediction is rate limited.'
+      },
+      { status: 429 }
+    );
+  }
+  // =======================================
+
   try {
     const userId = await getAuthUserId()
     if (!userId) {
       logger.warn('Unauthenticated access attempt to POST /api/predict-cycle');
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Rate Limiting (20 requests/minute)
-    if (!isAllowed(userId, 'predict_cycle', 20)) {
-      logger.warn(`Rate limit exceeded for user ${userId} on POST /api/predict-cycle`);
-      return NextResponse.json({ success: false, error: 'Too Many Requests' }, { status: 429 })
     }
 
     const supabaseAdmin = getSupabaseAdmin()

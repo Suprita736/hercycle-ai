@@ -2,53 +2,91 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useLanguage } from '@/lib/LanguageContext'
+import { useTranslations, useLocale } from 'next-intl'
 import { useClerk } from '@clerk/nextjs'
-
-const NAV_ITEMS = [
-  { key: 'dashboard', label: 'Dashboard', href: '/' },
-  { key: 'track',     label: 'Track',     href: '/track' },
-  { key: 'insights',  label: 'Insights',  href: '/insights' },
-  { key: 'chat',      label: 'Chat',      href: '/chat' },
-]
+import { useOffline } from '@/lib/OfflineContext'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { Settings, LogOut, Languages } from 'lucide-react'
+import PrivacySettingsModal from './PrivacySettingsModal'
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { language, setLanguage } = useLanguage()
-  const router   = useRouter()
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false)
+  const t = useTranslations('Navbar')
+  const locale = useLocale()
+  const router = useRouter()
   const pathname = usePathname()
   const { signOut } = useClerk()
+  const { isOffline, pendingSyncCount, isSyncing } = useOffline()
+
+  const NAV_ITEMS = [
+    { key: 'dashboard', label: t('dashboard'), href: `/${locale}` },
+    { key: 'track',     label: t('track'),     href: `/${locale}/track` },
+    { key: 'insights',  label: t('insights'),  href: `/${locale}/insights` },
+    { key: 'community', label: t('community'), href: `/${locale}/community` },
+  ]
 
   const handleLogToday = () => {
-    if (pathname === '/') {
+    if (pathname === `/${locale}` || pathname === '/') {
       const el = document.getElementById('daily-log-section')
       if (el) el.scrollIntoView({ behavior: 'smooth' })
     } else {
-      router.push('/track')
+      router.push(`/${locale}/track`)
     }
   }
 
   const handleLogout = async () => {
     await signOut()
-    router.push('/auth/login')
+    router.push(`/${locale}/auth/login`)
   }
 
   const isActive = (href) => {
-    if (href === '/') return pathname === '/'
+    if (href === `/${locale}`) return pathname === `/${locale}` || pathname === '/'
     return pathname.startsWith(href)
+  }
+
+  const switchLanguage = (newLocale) => {
+    const currentPathWithoutLocale = pathname.replace(`/${locale}`, '') || '/'
+    router.push(`/${newLocale}${currentPathWithoutLocale === '/' ? '' : currentPathWithoutLocale}`)
   }
 
   return (
     <nav className="glass flex flex-col md:flex-row items-center justify-between px-4 py-3 sm:px-6 sm:py-4 gap-3 md:gap-5 relative">
       {/* Top Row (Mobile) / Left Side (Desktop) */}
       <div className="flex justify-between items-center w-full md:w-auto">
-        <div className="logo text-lg sm:text-2xl">
-          Her<em>Cycle</em><span className="logo-dot"> AI</span> 🌸
+        <div className="logo text-lg sm:text-2xl flex items-center gap-2">
+          <span>
+            <span className="logo-her">Her</span>
+            <span className="logo-cycle">Cycle</span>
+            <span className="logo-dot"> AI</span>
+            🌸
+          </span>
+          {isOffline && (
+            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/30 whitespace-nowrap animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+              {t('offline')}
+            </span>
+          )}
+          {!isOffline && pendingSyncCount > 0 && (
+            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 whitespace-nowrap">
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-ping"></span>
+              {t('syncPending')} ({pendingSyncCount})
+            </span>
+          )}
+          {!isOffline && isSyncing && (
+            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30 whitespace-nowrap">
+              <svg className="animate-spin h-2.5 w-2.5 text-blue-300" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              {t('syncing')}
+            </span>
+          )}
         </div>
         
         {/* Hamburger Icon */}
         <button 
-          className="md:hidden text-white/80 hover:text-white p-1"
+          className="nav-menu-btn md:hidden text-white/80 hover:text-white p-1"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle Menu"
         >
@@ -82,7 +120,7 @@ export default function Navbar() {
             <Link
               key={key}
               href={href}
-              className={`block px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${isActive(href) ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
+              className={`nav-mobile-link block px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${isActive(href) ? 'active bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
               onClick={() => setMobileMenuOpen(false)}
             >
               {label}
@@ -92,32 +130,84 @@ export default function Navbar() {
       )}
 
       {/* Action Buttons Row */}
-      <div className="nav-right flex flex-nowrap items-center justify-center md:justify-end gap-2 sm:gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-        <div className="lang-toggle shrink-0">
-          <button
-            className={`lang-btn ${language === 'EN' ? 'active' : ''}`}
-            onClick={() => setLanguage('EN')}
-          >EN</button>
-          <button
-            className={`lang-btn ${language === 'हि' ? 'active' : ''}`}
-            onClick={() => setLanguage('हि')}
-          >हि</button>
-        </div>
-        <button className="btn-pill shrink-0 px-3 py-1.5 sm:px-5 text-[12px] sm:text-sm whitespace-nowrap" onClick={handleLogToday}>
-          Log Today
+      <div className="nav-right flex items-center justify-center md:justify-end gap-2 sm:gap-3 w-full md:w-auto overflow-visible pb-0">
+        <button className="btn-pill nav-action nav-log-btn shrink-0 px-3 py-1.5 sm:px-5 text-[12px] sm:text-sm whitespace-nowrap" onClick={handleLogToday}>
+          {t('logToday')}
         </button>
-        <button
-          className="btn-pill shrink-0 px-3 py-1.5 sm:px-5 text-[12px] sm:text-sm whitespace-nowrap"
-          onClick={handleLogout}
-          style={{
-            background: 'rgba(255,255,255,0.12)',
-            border: '1px solid rgba(255,255,255,0.3)',
-          }}
-          title="Log out"
-        >
-          Sign Out
-        </button>
+
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <button
+              className="p-1.5 sm:p-2 rounded-full hover:bg-white/10 transition-colors border border-transparent hover:border-white/20 outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+              aria-label="Settings"
+            >
+              <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-white/90" />
+            </button>
+          </DropdownMenu.Trigger>
+
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              align="end"
+              sideOffset={8}
+              className="z-[100] min-w-[200px] p-2 rounded-xl border border-white/20 shadow-xl animate-in fade-in zoom-in-95 duration-200"
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                boxShadow: '0 8px 32px 0 rgba(228, 115, 168, 0.2)'
+              }}
+            >
+              <div className="px-2 py-1.5 text-[10px] font-semibold text-white/70 uppercase tracking-wider mb-1">
+                Settings
+              </div>
+              
+              <div className="flex items-center justify-between px-2 py-2 mb-1 rounded-lg hover:bg-white/5 transition-colors">
+                <div className="flex items-center gap-2 text-sm text-white/90">
+                  <Languages className="w-4 h-4 text-white/70" />
+                  <span>Language</span>
+                </div>
+                <div className="flex bg-white/10 rounded-lg p-0.5 border border-white/10">
+                  <button
+                    className={`px-2 py-1 rounded-md text-xs font-bold transition-all duration-200 ${locale === 'en' ? 'bg-white/25 text-white shadow-sm' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                    onClick={() => switchLanguage('en')}
+                  >
+                    EN
+                  </button>
+                  <button
+                    className={`px-2 py-1 rounded-md text-xs font-bold transition-all duration-200 ${locale === 'hi' ? 'bg-white/25 text-white shadow-sm' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                    onClick={() => switchLanguage('hi')}
+                  >
+                    हि
+                  </button>
+                </div>
+              </div>
+
+              <DropdownMenu.Separator className="h-[1px] bg-white/20 my-1 mx-1" />
+
+              <DropdownMenu.Item asChild onSelect={() => setIsPrivacyModalOpen(true)}>
+                <button
+                  className="w-full flex items-center gap-2 px-2 py-2 text-sm text-white hover:text-white hover:bg-white/15 rounded-lg transition-colors outline-none cursor-pointer mt-1 group"
+                >
+                  <Settings className="w-4 h-4 text-white/70 group-hover:text-white transition-colors" />
+                  <span>Privacy & Data</span>
+                </button>
+              </DropdownMenu.Item>
+
+              <DropdownMenu.Item asChild>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-2 py-2 text-sm text-white hover:text-white hover:bg-white/15 rounded-lg transition-colors outline-none cursor-pointer mt-1 group"
+                >
+                  <LogOut className="w-4 h-4 text-white/70 group-hover:text-white transition-colors" />
+                  <span>{t('signOut')}</span>
+                </button>
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
       </div>
+
+      <PrivacySettingsModal isOpen={isPrivacyModalOpen} setIsOpen={setIsPrivacyModalOpen} />
     </nav>
   )
 }
