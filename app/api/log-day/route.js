@@ -9,7 +9,8 @@ const logPostSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be in YYYY-MM-DD format'),
   symptoms: z.array(z.string().max(100)).max(50),
   mood: z.string().max(50).nullable().optional(),
-  flow: z.string().max(10).nullable().optional()
+  flow: z.string().max(10).nullable().optional(),
+  cervical_discharge: z.string().max(50).nullable().optional()
 })
 
 // GET /api/log-day?date=YYYY-MM-DD — fetch a single day's log
@@ -94,13 +95,13 @@ export async function POST(request) {
       return NextResponse.json({ success: false, message: 'Bad Request', details: result.error.errors }, { status: 400 })
     }
 
-    const { date, symptoms, mood, flow } = result.data
+    const { date, symptoms, mood, flow, cervical_discharge } = result.data
 
     const supabaseAdmin = getSupabaseAdmin()
     const { error } = await supabaseAdmin
       .from('daily_logs')
       .upsert(
-        { user_id: userId, date, symptoms, mood, flow, updated_at: new Date().toISOString() },
+        { user_id: userId, date, symptoms, mood, flow, cervical_discharge, updated_at: new Date().toISOString() },
         { onConflict: 'user_id,date' }
       )
 
