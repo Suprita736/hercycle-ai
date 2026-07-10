@@ -16,6 +16,7 @@ import DailyLogPanel from '@/components/dashboard/DailyLogPanel'
 import OnboardingModal from '@/components/dashboard/OnboardingModal'
 import PredictionCard from '@/components/dashboard/PredictionCard'
 import CycleHistoryCard from '@/components/dashboard/CycleHistoryCard'
+import CervicalDischargeTracker from '@/components/dashboard/CervicalDischargeTracker'
 import { useOffline } from '@/lib/OfflineContext'
 import { useLocale, useTranslations } from 'next-intl'
 
@@ -127,6 +128,8 @@ const HerCycleApp = () => {
   const [selectedSymptoms, setSelectedSymptoms] = useState([])
   const [selectedMood, setSelectedMood] = useState(null)
   const [selectedFlow, setSelectedFlow] = useState(null)
+  const [selectedDischarge, setSelectedDischarge] = useState(null)
+  const [saveTrigger, setSaveTrigger] = useState(0)
   const [cycleData, setCycleData] = useState(null)
   const [pcodRisk, setPcodRisk] = useState(null)
   const [pcodRiskLoading, setPcodRiskLoading] = useState(true)
@@ -251,7 +254,8 @@ const HerCycleApp = () => {
         date: new Date().toISOString().split('T')[0],
         symptoms: selectedSymptoms,
         mood: selectedMood,
-        flow: selectedFlow
+        flow: selectedFlow,
+        cervical_discharge: selectedDischarge
       }
       const data = await offlineClient.saveDailyLog(logData)
       if (data.success) {
@@ -263,6 +267,8 @@ const HerCycleApp = () => {
         setSelectedSymptoms([])
         setSelectedMood(null)
         setSelectedFlow(null)
+        setSelectedDischarge(null)
+        setSaveTrigger(prev => prev + 1)
         fetchCycleData()
       } else {
         toast.error('❌ Failed to save')
@@ -442,9 +448,13 @@ const HerCycleApp = () => {
           <PredictionCard cycleData={cycleData} activeLang={activeLang} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginTop: '32px', marginBottom: '48px' }}>
+        <div className="half-row">
           <CycleHistoryCard cycleData={cycleData} />
-          <div className="placeholder" />
+          <CervicalDischargeTracker 
+            selectedDischarge={selectedDischarge} 
+            setSelectedDischarge={setSelectedDischarge} 
+            saveTrigger={saveTrigger} 
+          />
         </div>
 
         <Footer />
