@@ -84,7 +84,7 @@ export async function GET(request) {
   // ============ RATE LIMITING ============
   try {
     const identifier = await getRateLimitIdentifier(request);
-    await devLimiter.check(2, identifier); // 2 requests per minute
+    await devLimiter.check(request); // 2 requests per minute
   } catch (rateLimitError) {
     console.warn(`[Rate Limit] Seed endpoint: ${rateLimitError.message}`);
     return NextResponse.json(
