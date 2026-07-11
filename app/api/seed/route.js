@@ -2,6 +2,7 @@ import { validateEnv } from "@/lib/env";
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getAuthUserId } from '@/lib/clerk-server'
+import { devLimiter, getRateLimitIdentifier } from '@/lib/rateLimiter'
 import { logger } from '@/lib/logger'
 
 const CYCLE_LENGTHS = [28, 27, 29, 28, 28, 27]
@@ -53,7 +54,7 @@ export const dynamic = 'force-dynamic'
 // ──────────────────────────────────────────────
 // ✅ EVERYTHING BELOW IS INSIDE THE GET FUNCTION
 // ──────────────────────────────────────────────
-export async function GET() {
+export async function GET(request) {
   validateEnv();
 
   // ✅ FIX #5: REQUIRE SERVICE ROLE KEY (No Anon Fallback)
@@ -80,6 +81,19 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  // ============ RATE LIMITING ============
+  try {
+    const identifier = await getRateLimitIdentifier(request);
+    await devLimiter.check(2, identifier); // 2 requests per minute
+  } catch (rateLimitError) {
+    console.warn(`[Rate Limit] Seed endpoint: ${rateLimitError.message}`);
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Seed route is heavily rate limited.' },
+      { status: 429 }
+    );
+  }
+  // =======================================
+
   // 2. Require Clerk authentication
   try {
     const userId = await getAuthUserId()
@@ -87,11 +101,6 @@ export async function GET() {
       logger.warn('Unauthenticated access attempt to seed API');
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    )
 
     const PERIOD_SYMPTOMS = ['Cramps', 'Bloating', 'Fatigue', 'Headache']
     const PMS_SYMPTOMS = ['Bloating', 'Headache', 'Acne', 'Fatigue']
@@ -121,7 +130,7 @@ export async function GET() {
 
     // 3. Build daily logs
     const logRows = []
-    for (const { start, end, periodLen, cycleLen } of cycles) {
+    for (const { start, periodLen, cycleLen } of cycles) {
       const cycleStart = new Date(start)
       for (let day = 0; day < cycleLen; day++) {
         const date = addDays(cycleStart, day)

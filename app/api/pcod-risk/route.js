@@ -2,9 +2,27 @@ import { NextResponse } from 'next/server'
 import { calculatePCODRisk } from '@/lib/api-helpers'
 import { getAuthUserId } from '@/lib/clerk-server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { aiLimiter, getRateLimitIdentifier } from '@/lib/rateLimiter'
 import { logger } from '@/lib/logger'
 
-export async function GET() {
+export async function GET(request) {
+  // ============ RATE LIMITING ============
+  try {
+    // const identifier = await getRateLimitIdentifier(request);
+    await aiLimiter.check(request);
+    // await aiLimiter.checkNext(request, 5); // 5 requests per minute
+  } catch (rateLimitError) {
+    console.warn(`[Rate Limit] PCOD risk endpoint: ${rateLimitError.message}`);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Too many requests, please slow down. PCOD risk calculation is rate limited.'
+      },
+      { status: 429 }
+    );
+  }
+  // =======================================
+
   try {
     const userId = await getAuthUserId()
     if (!userId) {
