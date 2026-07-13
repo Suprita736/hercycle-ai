@@ -13,20 +13,21 @@ const nextConfig = {
     minimumCacheTTL: 60,
   },
 
-  turbopack: {
-    root: __dirname,
-    resolveAlias: {
-      '@clerk/nextjs/server': './lib/clerk-server-mock.js',
-      '@clerk/nextjs': './lib/clerk-mock.js'
-    }
-  },
+  // turbopack: {
+  //   root: __dirname,
+  //   resolveAlias: {
+  //     '@clerk/nextjs/server': './lib/clerk-server-mock.js',
+  //     '@clerk/nextjs': './lib/clerk-mock.js'
+  //   }
+  // },
 
-  webpack: (config) => {
-    const path = require('path');
-    config.resolve.alias['@clerk/nextjs/server'] = path.resolve(__dirname, 'lib/clerk-server-mock.js');
-    config.resolve.alias['@clerk/nextjs'] = path.resolve(__dirname, 'lib/clerk-mock.js');
-    return config;
-  },
+  // webpack: (config) => {
+  //   const path = require('path');
+  //   config.resolve.alias['@clerk/nextjs/server'] = path.resolve(__dirname, 'lib/clerk-server-mock.js');
+  //   config.resolve.alias['@clerk/nextjs'] = path.resolve(__dirname, 'lib/clerk-mock.js');
+  //   return config;
+  // },
+
 
   // Optimize heavy packages — tree-shake on import
   experimental: {
