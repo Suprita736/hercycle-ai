@@ -290,7 +290,7 @@ export default function TrackPage() {
           }}>
             {t('logToday')}
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+          <div className="daily-log-grid">
             <DailyLogPanel
               selectedSymptoms={selectedSymptoms}
               toggleSymptom={toggleSymptom}
