@@ -2971,3 +2971,12 @@ nav ul li a:focus-visible,
 
   font-weight: 600;
 }
+/* Force Hide Clerk Watermark */
+.cl-watermark, .cl-internal-b3alnr { display: none !important; opacity: 0 !important; visibility: hidden !important; }
+
+
+/* Ultra Aggressive Clerk Watermark Removal */
+.cl-rootBox a[href*='clerk.com'], .cl-rootBox a[href*='clerk.dev'] { display: none !important; }
+.cl-rootBox div:has(> a[href*='clerk.com']) { display: none !important; }
+.cl-rootBox div[style*='bottom: 0'] { display: none !important; }
+
