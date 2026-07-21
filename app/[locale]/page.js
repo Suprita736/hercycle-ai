@@ -4,7 +4,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth, useUser } from '@clerk/nextjs'
 import toast from 'react-hot-toast'
-
+import CyclePhaseCard from '@/components/dashboard/CyclePhaseCard'
+import {
+  calculateCyclePhase,
+  getLatestCycle,
+} from '@/lib/calculateCyclePhase'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import HeroSection from '@/components/dashboard/HeroSection'
@@ -16,6 +20,7 @@ import DailyLogPanel from '@/components/dashboard/DailyLogPanel'
 import OnboardingModal from '@/components/dashboard/OnboardingModal'
 import PredictionCard from '@/components/dashboard/PredictionCard'
 import CycleHistoryCard from '@/components/dashboard/CycleHistoryCard'
+import CervicalDischargeTracker from '@/components/dashboard/CervicalDischargeTracker'
 import { useOffline } from '@/lib/OfflineContext'
 import { useLocale, useTranslations } from 'next-intl'
 
@@ -128,6 +133,8 @@ const HerCycleApp = () => {
   const [selectedSymptoms, setSelectedSymptoms] = useState([])
   const [selectedMood, setSelectedMood] = useState(null)
   const [selectedFlow, setSelectedFlow] = useState(null)
+  const [selectedDischarge, setSelectedDischarge] = useState(null)
+  const [saveTrigger, setSaveTrigger] = useState(0)
   const [cycleData, setCycleData] = useState(null)
   const [pcodRisk, setPcodRisk] = useState(null)
   const [pcodRiskLoading, setPcodRiskLoading] = useState(true)
@@ -156,11 +163,12 @@ const HerCycleApp = () => {
 
   // Check session on mount and load data
   useEffect(() => {
-    if (!isLoaded || !user) return
+    if (!isLoaded) return
     if (!isSignedIn) {
       router.push(`/${locale}/auth/login`)
       return
     }
+    if (!user) return
 
     const role = user?.publicMetadata?.role
     if (!role) {
@@ -173,12 +181,15 @@ const HerCycleApp = () => {
     }
 
     Promise.all([fetchCycleData(), fetchPCODRisk()])
-    
-    // Set initial greeting after mount to avoid hydration mismatch
-    if (chatMessages.length === 0) {
-      setChatMessages([{ role: 'ai', text: tChat('greeting') }])
-    }
-  }, [isLoaded, isSignedIn, user, router, tChat, locale])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, isSignedIn, user?.id, locale])
+
+  // Set initial greeting once on mount (tChat is intentionally excluded from deps
+  // because it creates a new reference every render and would cause an infinite loop)
+  useEffect(() => {
+    setChatMessages([{ role: 'ai', text: tChat('greeting') }])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const fetchCycleData = async () => {
     try {
@@ -212,7 +223,7 @@ const HerCycleApp = () => {
   const fetchPCODRisk = async () => {
     setPcodRiskLoading(true)
     try {
-      const data = await offlineClient.fetchPCODRisk()
+      const data = await offlineClient.fetchPCODRisk() // PCOD risk calculates locally now if offline, maybe we need to pass encryptionKey there too if it fetches? Wait, fetchPCODRisk just reads IndexedDB which has decrypted data.
       if (data.success) {
         setPcodRisk(data.data)
       }
@@ -263,7 +274,8 @@ const HerCycleApp = () => {
         date: new Date().toISOString().split('T')[0],
         symptoms: selectedSymptoms,
         mood: selectedMood,
-        flow: selectedFlow
+        flow: selectedFlow,
+        cervical_discharge: selectedDischarge
       }
       const data = await offlineClient.saveDailyLog(logData)
       if (data.success) {
@@ -275,6 +287,8 @@ const HerCycleApp = () => {
         setSelectedSymptoms([])
         setSelectedMood(null)
         setSelectedFlow(null)
+        setSelectedDischarge(null)
+        setSaveTrigger(prev => prev + 1)
         fetchCycleData()
       } else {
         toast.error('❌ Failed to save')
@@ -362,6 +376,40 @@ const HerCycleApp = () => {
     }
   }
 
+  
+  const latestCycle = getLatestCycle(cycleData?.cycles)
+
+const periodStart =
+  latestCycle?.start_date ||
+  latestCycle?.period_start ||
+  null
+
+const periodEnd =
+  latestCycle?.end_date ||
+  latestCycle?.period_end ||
+  null
+
+const inferredPeriodLength = periodStart && periodEnd
+  ? Math.max(
+      1,
+      Math.round(
+        (
+          new Date(`${periodEnd}T00:00:00`) -
+          new Date(`${periodStart}T00:00:00`)
+        ) / 86400000
+      ) + 1
+    )
+  : 5
+
+const phaseInfo = calculateCyclePhase({
+  periodStart,
+  cycleLength:
+    latestCycle?.cycle_length ||
+    cycleData?.averageCycleLength ||
+    28,
+  periodLength: inferredPeriodLength,
+})
+
   return (
     <>
       {/* ── Onboarding Modal ── */}
@@ -413,6 +461,15 @@ const HerCycleApp = () => {
             activeLang={activeLang}
           />
         </div>
+        
+        <div style={{ marginTop: '1.5rem' }}>
+        <CyclePhaseCard
+        phaseKey={phaseInfo.phaseKey}
+        cycleDay={phaseInfo.cycleDay}
+        ovulationDay={phaseInfo.ovulationDay}
+        hasData={phaseInfo.hasData}
+        />
+        </div>
 
         <FeaturesSection activeLang={activeLang} />
 
@@ -454,9 +511,13 @@ const HerCycleApp = () => {
           <PredictionCard cycleData={cycleData} activeLang={activeLang} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginTop: '32px', marginBottom: '48px' }}>
+        <div className="half-row">
           <CycleHistoryCard cycleData={cycleData} />
-          <div className="placeholder" />
+          <CervicalDischargeTracker 
+            selectedDischarge={selectedDischarge} 
+            setSelectedDischarge={setSelectedDischarge} 
+            saveTrigger={saveTrigger} 
+          />
         </div>
 
         <Footer />

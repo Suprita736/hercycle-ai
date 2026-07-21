@@ -13,19 +13,20 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { useOffline } from '@/lib/OfflineContext'
 import { useTranslations } from 'next-intl'
+import WeightTrendChart from '@/components/dashboard/WeightTrendChart'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const PINK         = '#e8527e'
-const MAUVE        = '#9d3f7a'
-const ACCENT       = '#e91e8c'
+const PINK = '#e8527e'
+const MAUVE = '#9d3f7a'
+const ACCENT = '#e91e8c'
 const TEXT_PRIMARY = '#ffffff'
-const TEXT_FAINT   = 'rgba(255,255,255,0.65)'
-const CARD_BG      = 'rgba(255,255,255,0.08)'
-const CARD_BORDER  = '1px solid rgba(255,255,255,0.14)'
+const TEXT_FAINT = 'rgba(255,255,255,0.65)'
+const CARD_BG = 'rgba(255,255,255,0.08)'
+const CARD_BORDER = '1px solid rgba(255,255,255,0.14)'
 
 const SYMPTOM_LIST = ['Cramps', 'Headache', 'Bloating', 'Fatigue', 'Acne', 'Nausea']
-const MOOD_EMOJIS  = ['😊', '😐', '😢', '😡']
-const MOOD_LABELS  = { '😊': 'Happy', '😐': 'Neutral', '😢': 'Sad', '😡': 'Angry' }
+const MOOD_EMOJIS = ['😊', '😐', '😢', '😡']
+const MOOD_LABELS = { '😊': 'Happy', '😐': 'Neutral', '😢': 'Sad', '😡': 'Angry' }
 
 // ─── Icon badge wrapper ───────────────────────────────────────────────────────
 function IconBadge({ children, size = 'lg' }) {
@@ -129,14 +130,14 @@ export default function InsightsPage() {
   const tSymp = useTranslations('symptoms')
   const tMood = useTranslations('moods')
   const tRisk = useTranslations('Risk')
-  const router   = useRouter()
+  const router = useRouter()
   const { isLoaded, isSignedIn } = useAuth()
   const { offlineClient } = useOffline()
 
   const [cycleData, setCycleData] = useState(null)
-  const [pcodRisk,  setPcodRisk]  = useState(null)
+  const [pcodRisk, setPcodRisk] = useState(null)
   const [dailyLogs, setDailyLogs] = useState([])
-  const [loading,   setLoading]   = useState(true)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!isLoaded) return
@@ -149,7 +150,7 @@ export default function InsightsPage() {
         offlineClient.fetchAllLogs(),
       ])
       if (cycleRes.success) setCycleData(cycleRes.data)
-      if (pcodRes.success)  setPcodRisk(pcodRes.data)
+      if (pcodRes.success) setPcodRisk(pcodRes.data)
       setDailyLogs(logsRes.success ? logsRes.data : [])
       setLoading(false)
     }
@@ -157,10 +158,10 @@ export default function InsightsPage() {
   }, [isLoaded, isSignedIn, router])
 
   // ── Derived data ──────────────────────────────────────────────────────────
-  const cycles      = cycleData?.cycles || []
-  const avgCycle    = cycleData?.averageCycleLength || 28
+  const cycles = cycleData?.cycles || []
+  const avgCycle = cycleData?.averageCycleLength || 28
   const totalCycles = cycles.length
-  const totalLogs   = dailyLogs.length
+  const totalLogs = dailyLogs.length
 
   const nextDate = cycleData?.nextPeriodDate
     ? new Date(cycleData.nextPeriodDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
@@ -192,7 +193,22 @@ export default function InsightsPage() {
 
   const recordedValue = totalCycles > 0 ? totalCycles : totalLogs
   const recordedLabel = totalCycles > 0 ? t('cyclesRecorded') : t('daysLogged')
-  const recordedSub   = totalCycles > 0 ? t('cycles') : t('entries')
+  const recordedSub = totalCycles > 0 ? t('cycles') : t('entries')
+
+  const handleCSVExport = () => {
+    if (!cycles.length) return
+    const header = 'start_date,end_date,cycle_length'
+    const rows = cycles.map(c =>
+      `${c.start_date || ''},${c.end_date || ''},${c.cycle_length || ''}`
+    )
+    const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'hercycle-cycles.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <>
@@ -253,11 +269,25 @@ export default function InsightsPage() {
               value={loading ? '…' : `${pcodRisk?.score ?? 0}/100`}
               sub={
                 pcodRisk?.tier === 'HIGH RISK' ? tRisk('high')
-                : pcodRisk?.tier === 'MEDIUM RISK' ? tRisk('med')
-                : tRisk('low')
+                  : pcodRisk?.tier === 'MEDIUM RISK' ? tRisk('med')
+                    : tRisk('low')
               }
             />
           </div>
+
+          {/* ── CSV Export Button ── */}
+          {cycles.length > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
+              <button
+                onClick={handleCSVExport}
+                className="export-btn"
+                style={{ width: 'auto', padding: '10px 20px' }}
+              >
+                ⬇️ {t('exportCsv')}
+              </button>
+            </div>
+          )}
+
 
           {/* ── Cycle Length Trend ── */}
           <SectionCard
@@ -285,6 +315,8 @@ export default function InsightsPage() {
               </ResponsiveContainer>
             )}
           </SectionCard>
+
+          <WeightTrendChart />
 
           {/* ── Symptom Frequency ── */}
           <SectionCard

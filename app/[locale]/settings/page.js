@@ -7,8 +7,10 @@ import Navbar from '@/components/layout/Navbar'
 import toast from 'react-hot-toast'
 import { Download, AlertTriangle, Trash2 } from 'lucide-react'
 import PartnerSharing from '@/components/settings/PartnerSharing'
+import { useTranslations } from 'next-intl'
 
 export default function SettingsPage() {
+  const t = useTranslations('PrivacyData')
   const router = useRouter()
   const { user } = useUser()
   const { signOut } = useClerk()
@@ -42,7 +44,7 @@ export default function SettingsPage() {
   }
 
   const handleDeleteAccount = async () => {
-    if (!confirm('WARNING: This will permanently delete your account, including all cycle logs, predictions, and profile data. This action CANNOT be undone. Are you sure you want to proceed?')) {
+    if (!confirm(t('deleteConfirm'))) {
       return
     }
 
@@ -67,7 +69,7 @@ export default function SettingsPage() {
 
       <div className="flex-1 flex flex-col justify-center items-center w-full max-w-2xl mx-auto px-4 pb-20">
         <div className="w-full">
-          <h1 className="text-3xl font-bold text-white mb-8 text-center sm:text-left">Privacy & Data</h1>
+          <h1 className="text-3xl font-bold text-white mb-8 text-center sm:text-left">{t('title')}</h1>
 
           <div className="glass p-6 sm:p-8 rounded-3xl space-y-8 shadow-2xl relative overflow-hidden">
             {/* Subtle glow behind the card */}
@@ -78,9 +80,9 @@ export default function SettingsPage() {
 
             {/* Data Export Section */}
             <section className="space-y-4 relative z-10">
-              <h2 className="text-xl font-semibold text-white">Export Your Data</h2>
+              <h2 className="text-xl font-semibold text-white">{t('exportTitle')}</h2>
               <p className="text-white/70 text-sm">
-                Download a copy of all your health data, including cycle logs and predictions, in JSON and CSV formats.
+                {t('exportDesc')}
               </p>
               <button 
                 onClick={handleExportData}
@@ -88,7 +90,7 @@ export default function SettingsPage() {
                 className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-xl transition-colors font-medium disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
-                {isExporting ? 'Exporting...' : 'Export My Data'}
+                {isExporting ? t('exporting') : t('exportBtn')}
               </button>
             </section>
 
@@ -96,15 +98,13 @@ export default function SettingsPage() {
 
             {/* Account Deletion Section */}
             <section className="space-y-4 relative z-10">
-              <h2 className="text-xl font-semibold text-red-400">Danger Zone</h2>
+              <h2 className="text-xl font-semibold text-red-400">{t('dangerZone')}</h2>
               <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex gap-3">
                 <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                 <div className="space-y-3">
-                  <h3 className="font-semibold text-red-300">Delete Account</h3>
+                  <h3 className="font-semibold text-red-300">{t('deleteTitle')}</h3>
                   <p className="text-red-300/70 text-sm leading-relaxed">
-                    Permanently delete your account and all associated data from our servers. 
-                    This will immediately trigger a hard wipe of your cycles, logs, and profile.
-                    This action is irreversible.
+                    {t('deleteDesc')}
                   </p>
                   <button 
                     onClick={handleDeleteAccount}
@@ -112,7 +112,7 @@ export default function SettingsPage() {
                     className="flex items-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 px-5 py-2.5 rounded-xl transition-colors font-medium border border-red-500/30 mt-2 disabled:opacity-50"
                   >
                     <Trash2 className="w-4 h-4" />
-                    {isDeleting ? 'Deleting Account...' : 'Delete My Account'}
+                    {isDeleting ? t('deleting') : t('deleteBtn')}
                   </button>
                 </div>
               </div>
